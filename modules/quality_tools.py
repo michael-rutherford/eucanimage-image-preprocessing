@@ -104,7 +104,7 @@ class quality_tools(object):
 
                         # get dicom files
                         scan_files = xnat_scan.resources['DICOM'].files if 'DICOM' in xnat_scan.resources else None                    
-                        datasets = []
+                        dicom_files = []
                         if scan_files:
 
                             # ----------------------------
@@ -123,7 +123,7 @@ class quality_tools(object):
                                         futures_list.append(executor.submit(self.read_dicom, scan_file, True))
 
                                     for future in futures.as_completed(futures_list):
-                                        datasets.append(future.result())
+                                        dicom_files.append(future.result())
 
                             # ----------------------------
                             # Single-threaded
@@ -136,13 +136,13 @@ class quality_tools(object):
                                     #with scan_file.open() as dicom_file:
                                         #dataset = dicom.dcmread(dicom_file, stop_before_pixels=True)
                                         #datasets.append([scan_file, dataset])
-                                    datasets.append(self.read_dicom(scan_file, exclude_pixels=True))
+                                    dicom_files.append(self.read_dicom(scan_file, exclude_pixels=True))
 
 
                             # ----------------------------
                             # sort datasets by InstanceNumber, ImagePositionPatient, SliceLocation, AcquisitionTime, SOPInstanceUID
                             # ----------------------------
-                            datasets.sort(key=get_sort_key)
+                            dicom_files.sort(key=get_sort_key)
 
                             # ----------------------------
                             # filter out scouts, localizers, b0s
@@ -152,14 +152,14 @@ class quality_tools(object):
                             # ensure not B0 bias correction (Check Series description or Sequence name for "b0")
 
                             # cut off first 3 slices
-                            if len(datasets) > 3:
-                                filtered_datasets = datasets[3:]
+                            if len(dicom_files) > 3:
+                                filtered_dicom_files = dicom_files[3:]
                             else:
-                                filtered_datasets = datasets
+                                filtered_dicom_files = dicom_files
             
                             # check remaining slices for scout, localizer, b0 and filter out
                             disallowed_terms = ['scout', 'localizer', 'b0']
-                            filtered_datasets = [ds for ds in filtered_datasets 
+                            filtered_dicom_files = [ds for ds in filtered_dicom_files 
                                 if not any(x.lower() in disallowed_terms for x in ds[1].ImageType)
                                 and ('SeriesDescription' not in ds[1] or not any(term in ds[1].SeriesDescription.lower() for term in disallowed_terms))
                                 and ('ProtocolName' not in ds[1] or not any(term in ds[1].ProtocolName.lower() for term in disallowed_terms))
@@ -167,12 +167,12 @@ class quality_tools(object):
 
                             # generate quality scores
                             if not edit_scan.scan_quality or args['reset'] == True:
-                                edit_scan.scan_quality = self.get_quality_score(edit_scan, xnat_scan, filtered_datasets, log, args)
+                                edit_scan.scan_quality = self.get_quality_score(edit_scan, xnat_scan, filtered_dicom_files, log, args)
                                 xtools.flush_database()
 
                             # get acquisition variables
                             if not edit_scan.scan_acquisition or args['reset'] == True:
-                                edit_scan.scan_acquisition = self.get_acquisition_tags(edit_scan, xnat_scan, filtered_datasets, log)
+                                edit_scan.scan_acquisition = self.get_acquisition_tags(edit_scan, xnat_scan, filtered_dicom_files, log)
                                 xtools.flush_database()
                 
         except Exception as e:            
@@ -187,7 +187,7 @@ class quality_tools(object):
     # get acquisition variables
     # ----------------------------
 
-    def get_acquisition_tags(self, edit_scan, xnat_scan, datasets, log):
+    def get_acquisition_tags(self, edit_scan, xnat_scan, dicom_files, log):
 
         # all
         all_list = [
@@ -279,7 +279,7 @@ class quality_tools(object):
 
             # Option 3
             # Read random DICOM file in scan
-            dicom_dataset = random.choice(datasets)[1]
+            dicom_dataset = random.choice(dicom_files)[1]
     
             extract_dict = {}
 
@@ -309,17 +309,17 @@ class quality_tools(object):
     # get quality score
     # ----------------------------
 
-    def get_quality_score(self, edit_scan, xnat_scan, datasets, log, args):
+    def get_quality_score(self, edit_scan, xnat_scan, dicom_files, log, args):
 
         results_dict = {}
         results_dict['instances'] = {}
 
         try:
             # Randomly select 10%, no less than 10 or length of list.
-            list_length = len(datasets)
+            list_length = len(dicom_files)
             sample_size = max(10, int(list_length*0.1))
             sample_size = min(sample_size, list_length)  # Ensure sample size does not exceed list length
-            selected_datasets = random.sample(datasets, sample_size)
+            selected_dicom_files = random.sample(dicom_files, sample_size)
 
             # ----------------------------
             # Multi-threaded
@@ -333,13 +333,13 @@ class quality_tools(object):
 
                     futures_list = []
 
-                    for dataset in selected_datasets:
-                        futures_list.append(executor.submit(self.get_piqe, dataset))
+                    for dicom_file in selected_dicom_files:
+                        futures_list.append(executor.submit(self.get_piqe, dicom_file))
 
                     for future in futures.as_completed(futures_list):
-                        dataset, score, artifact_mask, noise_mask, activity_mask = future.result()
-                        results_dict['instances'][dataset[1].SOPInstanceUID] = {}
-                        results_dict['instances'][dataset[1].SOPInstanceUID]['piqe_score'] = score
+                        dicom_file, score, artifact_mask, noise_mask, activity_mask = future.result()
+                        results_dict['instances'][dicom_file[1].SOPInstanceUID] = {}
+                        results_dict['instances'][dicom_file[1].SOPInstanceUID]['piqe_score'] = score
 
             # ----------------------------
             # Single-threaded
@@ -347,10 +347,10 @@ class quality_tools(object):
 
             else:
                 # retrieve the pixel information from the DICOM files
-                for dataset in selected_datasets:
-                    dataset, score, artifact_mask, noise_mask, activity_mask = self.get_piqe(dataset)
-                    results_dict['instances'][dataset[1].SOPInstanceUID] = {}
-                    results_dict['instances'][dataset[1].SOPInstanceUID]['piqe_score'] = score
+                for dicom_file in selected_dicom_files:
+                    dicom_file, score, artifact_mask, noise_mask, activity_mask = self.get_piqe(dicom_file)
+                    results_dict['instances'][dicom_file[1].SOPInstanceUID] = {}
+                    results_dict['instances'][dicom_file[1].SOPInstanceUID]['piqe_score'] = score
                     #results_dict['instances'][dicom_file[1].SOPInstanceUID]['artifact_mask'] = artifact_mask
                     #results_dict['instances'][dicom_file[1].SOPInstanceUID]['noise_mask'] = noise_mask
                     #results_dict['instances'][dicom_file[1].SOPInstanceUID]['activity_mask'] = activity_mask
@@ -367,13 +367,13 @@ class quality_tools(object):
             log.error(f'Quality Score Error - project: {edit_scan.project_name} | subject: {edit_scan.subject_label} | experiment: {edit_scan.experiment_label} | scan: {edit_scan.scan_id} | error: {str(e)}')
             return None
     
-    def get_piqe(self, dataset):
+    def get_piqe(self, dicom_file):
 
         # Get dicom header with pixels
-        dicom_file = self.read_dicom(dataset[0], exclude_pixels=False)[1]
+        full_dicom_file = self.read_dicom(dicom_file[0], exclude_pixels=False)[1]
 
         # Get pixel data as numpy array
-        check_array = dicom_file.pixel_array
+        check_array = full_dicom_file.pixel_array
 
         # Normalize pixel array if necessary
         check_image = cv2.normalize(check_array, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
@@ -391,6 +391,6 @@ class quality_tools(object):
         score, artifact_mask, noise_mask, activity_mask = piqe(check_image)
         #print(f"Score: {Score:.2f}")
 
-        return dataset, score, artifact_mask, noise_mask, activity_mask
+        return dicom_file, score, artifact_mask, noise_mask, activity_mask
 
 
