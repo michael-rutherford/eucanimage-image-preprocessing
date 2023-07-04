@@ -110,8 +110,8 @@ def main(argv):
         args.setArg("xnat_user", data['xnat_user'])
         args.setArg("xnat_password", data['xnat_password'])
         args.setArg("xnat_projects", data['xnat_projects'])
-        args.setArg("xnat_subjects", data['xnat_subjects'])
-        args.setArg("xnat_experiments", data['xnat_experiments'])
+        #args.setArg("xnat_subjects", data['xnat_subjects'])
+        #args.setArg("xnat_experiments", data['xnat_experiments'])
 
         args.setArg("preprocess_functions", data['preprocess_functions'])
         args.setArg("index", data['index'])
