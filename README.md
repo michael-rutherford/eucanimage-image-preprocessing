@@ -7,13 +7,9 @@ This repository contains the code for preprocessing images for the EuCanImage pr
 docker build -t eucanimage-image-preprocessing .
 ```
 
-
 ## Running
 ```
-docker run --rm -v D:\Data03\XNAT:/data -p 9000:9000 eucanimage-image-preprocessing \
-    -config_path /data/config/xnat_local.json \
-    -data_path /data/local_data \
-    -log_level info
+docker run --rm -v D:\Data03\XNAT:/data -p 9000:9000 eucanimage-image-preprocessing -config_path /data/config/xnat_local.json -data_path /data/local_data -log_level info
 ```
 
 | Parameter       | Description        |
@@ -28,7 +24,7 @@ docker run --rm -v D:\Data03\XNAT:/data -p 9000:9000 eucanimage-image-preprocess
 
 ## Configuration
 
-Running the code requires a configuration file. An example configuration file is provided in the /example folder.
+Running the code requires a configuration file. An example configuration file is provided in the [/example](https://github.com/michael-rutherford/eucanimage-image-preprocessing/tree/master/example) folder.
 
 The configuration file is a JSON file with the following structure:
 
@@ -59,7 +55,7 @@ The configuration file is a JSON file with the following structure:
 | **xnat_user**            | xnat user                                                  |
 | **xnat_password**        | xnat password                                              |
 | **xnat_projects**        | xnat projects to be processed                              |
-| **preprocess_functions** | preprocessing functions to run                             |
+| **preprocess_functions** | preprocessing functions to run - quality_functions                          |
 | **index**                | enables comparing local database and xnat to add new scans |
 | **reset**                | overwrites previously generated output                     |
 | **multi_proc**           | enables multi-processing                                   |
@@ -68,15 +64,6 @@ The configuration file is a JSON file with the following structure:
 | **multi_thread_workers** | number of pool workers for multi-threading                 |
 
 
-
-xnat_tools
-
-This module contains basic functions for interacting with XNAT.
-
-All data from the 
-
-
-quality_tools
 
 
 
