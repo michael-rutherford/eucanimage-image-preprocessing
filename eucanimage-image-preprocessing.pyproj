@@ -24,9 +24,6 @@
   <ItemGroup>
     <Compile Include="modules\arg_helper.py" />
     <Compile Include="modules\log_helper.py" />
-    <Compile Include="modules\piqe.py">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="models\xnat_db.py" />
     <Compile Include="modules\quality_tools.py" />
     <Compile Include="modules\xnat_tools.py" />
@@ -48,6 +45,7 @@
     <Content Include=".gitignore" />
     <Content Include="Dockerfile" />
     <Content Include="example\config_example.json" />
+    <Content Include="LICENSE.txt" />
     <Content Include="README.md" />
     <Content Include="requirements.txt" />
   </ItemGroup>

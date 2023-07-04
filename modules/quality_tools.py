@@ -3,7 +3,7 @@ from pydicom.multival import MultiValue
 import cv2
 import random
 import json
-from modules.piqe import piqe
+from pypiqe import piqe
 from modules.xnat_tools import xnat_tools
 from modules.log_helper import log_helper
 
