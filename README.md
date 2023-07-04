@@ -1,19 +1,19 @@
 # EuCanImage Image Preprocessing Toolkit
-------------------
 
 This repository contains the code for preprocessing images for the EuCanImage project. 
 
 ## Building
---------------------
 ```
 docker build -t eucanimage-image-preprocessing .
 ```
 
 
 ## Running
---------------------
 ```
-docker run --rm -v D:\Data03\XNAT:/data -p 9000:9000 eucanimage-image-preprocessing -config_path /data/config/xnat_local.json -data_path /data/local_data -log_level info
+docker run --rm -v D:\Data03\XNAT:/data -p 9000:9000 eucanimage-image-preprocessing \
+    -config_path /data/config/xnat_local.json \
+    -data_path /data/local_data \
+    -log_level info
 ```
 
 | Parameter       | Description        |
@@ -27,7 +27,6 @@ docker run --rm -v D:\Data03\XNAT:/data -p 9000:9000 eucanimage-image-preprocess
 | -log_level info  | logging level: debug, info, warning, error, critical |
 
 ## Configuration
-------------------
 
 Running the code requires a configuration file. An example configuration file is provided in the /example folder.
 
