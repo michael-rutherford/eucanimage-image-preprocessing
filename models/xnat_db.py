@@ -26,7 +26,7 @@ class xnat_db(object):
     # Initialize
     def __init__(self, db_connect_string):
 
-        self.engine = create_engine(db_connect_string, echo=False, future=False)
+        self.engine = create_engine(db_connect_string, echo=False)
         self.session_maker = sessionmaker(bind = self.engine)
 
         return None
@@ -45,11 +45,30 @@ class xnat_db(object):
         Base.metadata.create_all(self.engine, checkfirst=check)
 
         return None
+    
+    # Drop Database
+    def drop_database(self, check):
+
+        Base.metadata.drop_all(self.engine, checkfirst=check)
+
+        return None
 
     # Clear Database
     def clear_database(self, check):
 
-        Base.metadata.drop_all(self.engine, checkfirst=check)
+        #Base.metadata.drop_all(self.engine, checkfirst=check)
+        metadata = MetaData(bind=self.engine)
+        metadata.reflect()
+        
+        with self.get_session() as session:
+            for table in metadata.sorted_tables:
+                try:
+                    session.execute(table.delete())
+                except:
+                    session.rollback()
+                    raise
+                else:
+                    session.commit()
 
         return None
 
@@ -92,19 +111,44 @@ class xnat_db(object):
                     result = session.query(table).all()
                 return result
 
-
     # Insert Dataframe
-    def insert_dataframe(self, session, table, data_df):
+    def insert_dataframe(self, session, table_name, data_df):
 
         data_dict = data_df.to_dict(orient='records')
-        metadata = MetaData(bind=self.engine, reflect=True)
-        table = Table(table, metadata, autoload=True)
+        metadata = MetaData(bind=self.engine)
+        metadata.reflect()
+        table = Table(table_name, metadata, autoload_with=self.engine)
 
         try:
             session.execute(table.insert(), data_dict)
         except:
             session.rollback()
             raise
+        else:
+            session.commit()
+
+        return None
+
+    # Insert List of Dictionaries    
+    def insert_dicts(self, session, table_name, data_dict):
+        
+        data_dicts = None
+        if isinstance(data_dict, dict):
+            data_dicts = [data_dict]
+        elif isinstance(data_dict, list):
+            data_dicts = data_dict
+
+        # Load the metadata and reflect to get table details
+        metadata = MetaData(bind=self.engine)
+        metadata.reflect()
+        table = Table(table_name, metadata, autoload=True)
+
+        try:
+            # Insert data
+            session.execute(table.insert(), data_dicts)
+        except Exception as e:
+            session.rollback()
+            raise e
         else:
             session.commit()
 
