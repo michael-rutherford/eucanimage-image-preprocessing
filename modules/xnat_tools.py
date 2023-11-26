@@ -60,13 +60,13 @@ class xnat_tools(object):
     # Get scan list (from database)
     def get_db_scan_list(self, df, project=None, subject=None, experiment=None, scan=None):
         clause = 'where'
-        project_string = f"{clause} project_name = '{project}'" if project else ""
+        project_string = f"{clause} project_id = '{project}'" if project else ""
         if project_string:
             clause = 'and'
-        subject_string = f"{clause} subject_label = '{subject}'" if subject else ""
+        subject_string = f"{clause} subject_id = '{subject}'" if subject else ""
         if subject_string:
             clause = 'and'
-        experiment_string = f"{clause} experiment_label = '{experiment}'" if experiment else ""
+        experiment_string = f"{clause} experiment_id = '{experiment}'" if experiment else ""
         if experiment_string:
             clause = 'and'
         scan_string = f"{clause} scan_id = '{scan}'" if scan else ""

@@ -1,18 +1,22 @@
 {
-    "xnat_server": "http://host.docker.internal/xnat",
-    "xnat_user": "xnat_user",
-    "xnat_password": "xnat_password",
+  "xnat_server": "http://host.docker.internal/xnat",
+  "xnat_user": "xnat_user",
+  "xnat_password": "xnat_password",
 
-    "xnat_projects": ["eucanimage_test"],
+  "xnat_projects": [ "eucanimage_test" ],
 
-    "preprocess_functions": ["quality_functions"],
+  "preprocess_functions": [ "quality_functions" ],
 
-    "index": true,
-    "reset": true,
+  "data_path": "/data",
 
-    "multi_proc": true,
-    "multi_proc_cpu": 4,
+  "log_level": "info",
 
-    "multi_thread": true,
-    "multi_thread_workers": 10
+  "index": true,
+  "reset": true,
+
+  "multi_proc": true,
+  "multi_proc_cpu": 4,
+
+  "multi_thread": true,
+  "multi_thread_workers": 10
 }

@@ -63,9 +63,21 @@ def initiate_preprocessing(args, log):
         log.info('Initializing Quality Tools')
         qtools = quality_tools()
 
+        process_scan_list = []
+
         for project in args.xnat_projects:
-            db_scan_list = xtools.get_db_scan_list(df=False, project=project)
-            qtools.preprocess_project(args.getArgs(), db_scan_list, log)
+            if not args.xnat_subjects:
+                process_scan_list.extend(xtools.get_db_scan_list(df=False, project=project))
+            else:
+                for subject in args.xnat_subjects:
+                    if not args.xnat_experiments:
+                        process_scan_list.extend(xtools.get_db_scan_list(df=False, project=project, subject=subject))
+                    else:
+                        for experiment in args.xnat_experiments:
+                            process_scan_list.extend(xtools.get_db_scan_list(df=False, project=project, subject=subject, experiment=experiment))
+                    
+
+        qtools.preprocess_project(args.getArgs(), process_scan_list, log)
 
     # other functions
 
@@ -87,11 +99,8 @@ def main(argv):
     # if no arguments, use default values for dev testing
     if len(argv) == 0:
         set_args = {}
-        #set_args['config_path'] = r"D:\Data03\XNAT\config\xnat_remote.json"
-        #set_args['data_path'] = r"D:\Data03\XNAT\data"
-        set_args['config_path'] = r"D:\Data03\XNAT\config\xnat_local.json"
-        set_args['data_path'] = r"D:\Data03\XNAT\local_data"
-        set_args['log_level'] = "info"
+        set_args['config_path'] = r"D:\Data03\XNAT\config\xnat_remote.json"
+        #set_args['config_path'] = r"D:\Data03\XNAT\config\xnat_local.json"
         args.setArgs(set_args)
         
     # --------------------------------------
@@ -101,10 +110,12 @@ def main(argv):
     with open(args.config_path) as json_file:
         data = json.load(json_file)
 
+        args.setArg("data_path", data['data_path'])
         args.setArg("db_path", os.path.join(args.data_path, "xnat_db.db"))
         args.setArg("db_connect_string", f'sqlite+pysqlite:///{args.db_path}')
         args.setArg("stage_path", os.path.join(args.data_path, "stage"))
         args.setArg("log_path", os.path.join(args.data_path, "logs"))
+        args.setArg("log_level", data['log_level'])
 
         args.setArg("xnat_server", data['xnat_server'])
         args.setArg("xnat_user", data['xnat_user'])

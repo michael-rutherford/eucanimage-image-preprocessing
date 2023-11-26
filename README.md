@@ -9,7 +9,7 @@ docker build -t eucanimage-image-preprocessing .
 
 ## Running
 ```
-docker run --rm -v D:\Data03\XNAT:/data -p 9000:9000 eucanimage-image-preprocessing -config_path /data/config/xnat_local.json -data_path /data/local_data -log_level info
+docker run --rm -v D:\Data03\XNAT:/data -p 9000:9000 eucanimage-image-preprocessing -config_path /data/config/xnat_local.json
 ```
 
 | Parameter       | Description        |
@@ -19,8 +19,6 @@ docker run --rm -v D:\Data03\XNAT:/data -p 9000:9000 eucanimage-image-preprocess
 | -p 9000:9000 | map host port to container port |
 | eucanimage-image-preprocessing | the docker image to run |
 | -config_path /data/config/xnat_local.json | path to configuration (in relation to docker path) |
-| -data_path /data/local_data | path to data store for db and logs (in relation to docker path) |
-| -log_level info  | logging level: debug, info, warning, error, critical |
 
 ## Configuration
 
@@ -62,7 +60,8 @@ The configuration file is a JSON file with the following structure:
 | **multi_proc_cpu**       | number of cpus to use in multi-processing                  |
 | **multi_thread**         | enables multi-threading (within each process)              |
 | **multi_thread_workers** | number of pool workers for multi-threading                 |
-
+| **data_path**            | path to data store for db and logs (in relation to docker path) |
+| **log_level**            | logging level: debug, info, warning, error, critical       |
 
 
 
