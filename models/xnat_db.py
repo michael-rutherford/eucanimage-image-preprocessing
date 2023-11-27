@@ -187,3 +187,4 @@ class XnatScan(Base):
     # JSON files to be pushed back to XNAT
     scan_quality = Column(TEXT)
     scan_acquisition = Column(TEXT)
+    scan_normalization = Column(TEXT)

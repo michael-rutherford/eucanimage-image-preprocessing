@@ -25,6 +25,7 @@
     <Compile Include="modules\arg_helper.py" />
     <Compile Include="modules\log_helper.py" />
     <Compile Include="models\xnat_db.py" />
+    <Compile Include="modules\normalization_tools.py" />
     <Compile Include="modules\quality_tools.py" />
     <Compile Include="modules\xnat_tools.py" />
     <Compile Include="run.py" />

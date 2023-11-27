@@ -99,8 +99,9 @@ def main(argv):
     # if no arguments, use default values for dev testing
     if len(argv) == 0:
         set_args = {}
-        set_args['config_path'] = r"D:\Data03\XNAT\config\xnat_remote.json"
+        #set_args['config_path'] = r"D:\Data03\XNAT\config\xnat_remote.json"
         #set_args['config_path'] = r"D:\Data03\XNAT\config\xnat_local.json"
+        set_args['config_path'] = r"D:\Data03\XNAT\config\xnat_sandbox.json"
         args.setArgs(set_args)
         
     # --------------------------------------

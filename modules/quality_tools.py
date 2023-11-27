@@ -88,7 +88,7 @@ class quality_tools(object):
 
             xtools = xnat_tools(args['db_connect_string'], args['xnat_server'], args['xnat_user'], args['xnat_password'])
 
-            edit_scan_list = xtools.get_db_scan_list(False, scan.project_name, scan.subject_label, scan.experiment_label, scan.scan_id)
+            edit_scan_list = xtools.get_db_scan_list(False, scan.project_id, scan.subject_id, scan.experiment_id, scan.scan_id)
 
             if len(edit_scan_list) > 0:
                 edit_scan = edit_scan_list[0]
@@ -176,7 +176,7 @@ class quality_tools(object):
                                 xtools.flush_database()
                 
         except Exception as e:            
-            log.error(f'Project Scan Error - project: {scan.project_name} | subject: {scan.subject_label} | experiment: {scan.experiment_label} | scan: {scan.scan_id} | error: {str(e)}')
+            log.error(f'Project Scan Error - project: {scan.project_id} | subject: {scan.subject_id} | experiment: {scan.experiment_id} | scan: {scan.scan_id} | error: {str(e)}')
             return None
 
         return None
