@@ -6,6 +6,8 @@ import multiprocessing
 
 from modules.xnat_tools import xnat_tools
 from modules.quality_tools import quality_tools
+from modules.normalization_tools import normalization_tools
+
 from modules.log_helper import log_helper
 from modules.arg_helper import arg_helper
 
@@ -79,11 +81,11 @@ def initiate_preprocessing(args, log):
 
         qtools.preprocess_project(args.getArgs(), process_scan_list, log)
 
-    # other functions
+    # normalization functions
+    if "normalization_functions" in args.preprocess_functions:
+        log.info('Initializing Normalization Tools')
+        ntools = normalization_tools()
 
-    # !!!!!!!!!!!!!!!!!!!!!
-    # ADD OTHER TOOLKIT FUNCTIONS HERE
-    # !!!!!!!!!!!!!!!!!!!!!
     
     return None
 
