@@ -6,7 +6,7 @@
   "xnat_projects": [ "project_id" ],
   "xnat_subjects": [ "subject_id" ],
   "xnat_experiments": [ "experiment_id" ],
-  "xnat_scan": [ "scan_id" ],
+  "xnat_scans": [ "scan_id" ],
 
   "preprocess_functions": [ "quality_functions", "normalization_functions" ],
 

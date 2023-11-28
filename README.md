@@ -33,11 +33,18 @@ The configuration file is a JSON file with the following structure:
     "xnat_password": "xnat_password",
 
     "xnat_projects": ["eucanimage_test"],
+    "xnat_subjects": [ "subject_id" ],
+    "xnat_experiments": [ "experiment_id" ],
+    "xnat_scan": [ "scan_id" ],
 
-    "preprocess_functions": ["quality_functions"],
+    "preprocess_functions": ["quality_functions","normalization_functions"],
+
+    "data_path": "/data",
+
+    "log_level": "info",
 
     "index": true,
-    "reset": false,
+    "reset": true,
 
     "multi_proc": true,
     "multi_proc_cpu": 4,
@@ -52,8 +59,13 @@ The configuration file is a JSON file with the following structure:
 | **xnat_server**          | xnat host name                                             |
 | **xnat_user**            | xnat user                                                  |
 | **xnat_password**        | xnat password                                              |
-| **xnat_projects**        | xnat projects to be processed                              |
-| **preprocess_functions** | preprocessing functions to run - quality_functions                          |
+| **xnat_projects**        | xnat projects to be processed (**required**)                             |
+| **xnat_subjects**        | xnat subjects to be processed (**optional**)                             |
+| **xnat_experiments**     | xnat experiments to be processed (**optional**)                          |
+| **xnat_scans**           | xnat scans to be processed (**optional**)                                |
+| **preprocess_functions** | preprocessing functions to run - quality_functions         |
+| **data_path**            | path for output data                                       | 
+| **log_level**            | level for logging                                          |
 | **index**                | enables comparing local database and xnat to add new scans |
 | **reset**                | overwrites previously generated output                     |
 | **multi_proc**           | enables multi-processing                                   |
