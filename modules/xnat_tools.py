@@ -4,6 +4,7 @@ import xnat
 import random
 import string
 import pandas as pd
+import shutil
 
 
 from models.db import XnatScan
@@ -53,25 +54,29 @@ class xnat_tools(object):
         return xnat_list
 
     def set_scan_json_resource(self, args, log, scan, json_text, json_name):
-        #json_bytes = io.BytesIO(json_text.encode('utf-8'))        
         
-        temp_file_path = os.path.join(args['data_path'], "temp")
-        if not os.path.exists(temp_file_path):
-            os.makedirs(temp_file_path)
-        file_string = ''.join(random.choices(string.ascii_letters, k=10))
-        temp_file = os.path.join(temp_file_path, f'{file_string}.json')
+        random_string = ''.join(random.choices(string.ascii_letters, k=10))
+        temp_dir_path = os.path.join(args['data_path'], "temp", random_string)
+        temp_file_path = os.path.join(temp_dir_path, f'{random_string}.json')
+
+        os.makedirs(temp_dir_path, exist_ok=True)
         
-        with open(temp_file, 'w') as file:
+        with open(temp_file_path, 'w') as file:
             file.write(json_text)
         
         if json_name in scan.resources:
             resource = scan.resources[json_name]
         else:
-            resource = scan.create_resource(json_name)
+            try:
+                scan.create_resource(label=json_name, format='JSON')
+            except:
+                log.info('Bypassing create_resource error')
+            resource = scan.resources[json_name]
 
-        resource.upload(temp_file, f'{json_name}.json')
+        resource.upload(temp_file_path, f'{json_name}.json')
         
-        os.remove(temp_file)
+        if os.path.exists(temp_dir_path):
+            shutil.rmtree(temp_dir_path)
 
         # Upload as custom attribute (fails, attrs not)
         #scan.attrs.set(f'xnat:scanData/{json_name}', json_text)
