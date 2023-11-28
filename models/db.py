@@ -21,7 +21,7 @@ from datetime import datetime
 
 Base = declarative_base()
 
-class xnat_db(object):
+class db(object):
 
     # Initialize
     def __init__(self, db_connect_string):

@@ -42,7 +42,7 @@ class arg_helper(object):
 
     @property    
     def db_path(self):
-        #db_path = os.path.join(self._args['data_path'], "xnat_db.db")
+        #db_path = os.path.join(self._args['data_path'], "db.db")
         #return db_path
         return self._args['db_path']
 
@@ -91,6 +91,10 @@ class arg_helper(object):
     @property    
     def xnat_experiments(self):
         return self._args['xnat_experiments']
+
+    @property    
+    def xnat_scans(self):
+        return self._args['xnat_scans']
 
     @property    
     def preprocess_functions(self):

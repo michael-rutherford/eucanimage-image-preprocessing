@@ -3,9 +3,12 @@
   "xnat_user": "xnat_user",
   "xnat_password": "xnat_password",
 
-  "xnat_projects": [ "eucanimage_test" ],
+  "xnat_projects": [ "project_id" ],
+  "xnat_subjects": [ "subject_id" ],
+  "xnat_experiments": [ "experiment_id" ],
+  "xnat_scan": [ "scan_id" ],
 
-  "preprocess_functions": [ "quality_functions" ],
+  "preprocess_functions": [ "quality_functions", "normalization_functions" ],
 
   "data_path": "/data",
 
@@ -15,7 +18,7 @@
   "reset": true,
 
   "multi_proc": true,
-  "multi_proc_cpu": 4,
+  "multi_proc_cpu": 10,
 
   "multi_thread": true,
   "multi_thread_workers": 10

@@ -5,56 +5,31 @@ from datetime import datetime
 import multiprocessing
 
 from modules.xnat_tools import xnat_tools
+from modules.db_tools import db_tools
+
 from modules.quality_tools import quality_tools
 from modules.normalization_tools import normalization_tools
 
 from modules.log_helper import log_helper
 from modules.arg_helper import arg_helper
 
-def initiate_preprocessing(args, log):
+def run_preprocessing(args, log):
     
-    log.info(f'Initiating Preprocessing')
+    log.info(f'Running Preprocessing')
 
     # --------------------------------------
-    # initialize xnat and index scans
+    # initialize tools
     # --------------------------------------
-
-    xtools = xnat_tools(args.db_connect_string, args.xnat_server, args.xnat_user, args.xnat_password)
-
-    # --------------------------------------
-    # --------------------------------------
-    # TODO: attempt to filter by project, subject, 
-    # and experiment from config file. Needed? for testing?
-    # --------------------------------------
-    # --------------------------------------
-    # --------------------------------------
-    #has_projects = args.xnat_projects != None and len(args.xnat_projects) > 0
-    #has_subjects = args.xnat_subjects != None and len(args.xnat_subjects) > 0
-    #has_experiments = args.xnat_experiments != None and len(args.xnat_experiments) > 0
-
-    #def index_scans(project, subject, experiment):
-    #    if has_projects == True:
-    #        if has_subjects == True:
-    #            if has_experiments == True:
-    #                return xtools.index_scans(project, subject, experiment)
-    #            return xtools.index_scans(project, subject)
-    #        return xtools.index_scans(project)
-
-    #    for project in projects:
-    #        for subject in subjects:
-    #            for experiment in experiments:
-    #                xtools.index_scans(project, subject, experiment)
-    # --------------------------------------
-    # --------------------------------------
-    # --------------------------------------
+    log.info(f'Initializing XNAT')
+    xtools = xnat_tools(args.xnat_server, args.xnat_user, args.xnat_password)
+    log.info(f'Initializing Database')
+    dbtools = db_tools(args.db_connect_string)
 
     # --------------------------------------
-    # if index is true, index scans 
+    # if index is true, index scans (must run at least once)
     # --------------------------------------
     if args.index == True:
-        for project in args.xnat_projects:
-            log.info(f'Indexing {project}')
-            xtools.index_project_scans(project)
+        index_xnat(args, log, xtools, dbtools)
         
     # --------------------------------------
     # run other script functions
@@ -62,31 +37,29 @@ def initiate_preprocessing(args, log):
     
     # quality functions
     if "quality_functions" in args.preprocess_functions:
-        log.info('Initializing Quality Tools')
-        qtools = quality_tools()
-
-        process_scan_list = []
-
-        for project in args.xnat_projects:
-            if not args.xnat_subjects:
-                process_scan_list.extend(xtools.get_db_scan_list(df=False, project=project))
-            else:
-                for subject in args.xnat_subjects:
-                    if not args.xnat_experiments:
-                        process_scan_list.extend(xtools.get_db_scan_list(df=False, project=project, subject=subject))
-                    else:
-                        for experiment in args.xnat_experiments:
-                            process_scan_list.extend(xtools.get_db_scan_list(df=False, project=project, subject=subject, experiment=experiment))
-                    
-
-        qtools.preprocess_project(args.getArgs(), process_scan_list, log)
+        run_quality_functions(args, log, xtools, dbtools)
 
     # normalization functions
     if "normalization_functions" in args.preprocess_functions:
-        log.info('Initializing Normalization Tools')
-        ntools = normalization_tools()
-
+        run_normalization_functions(args, log, xtools, dbtools)
     
+    return None
+
+def index_xnat(args, log, xtools, dbtools):
+    log.info(f'Indexing')
+    xtools.index_scans(args, log, dbtools)        
+    return None
+
+def run_quality_functions(args, log, xtools, dbtools):
+    log.info('Running Quality Functions')
+    qtools = quality_tools()
+    qtools.run_quality_functions(args, log, xtools, dbtools)  
+    return None
+
+def run_normalization_functions(args, log, xtools, dbtools):
+    log.info('Running Normalization Functions')
+    ntools = normalization_tools()
+    ntools.run_normalization_functions(args, log, xtools, dbtools)
     return None
 
 
@@ -101,9 +74,8 @@ def main(argv):
     # if no arguments, use default values for dev testing
     if len(argv) == 0:
         set_args = {}
-        #set_args['config_path'] = r"D:\Data03\XNAT\config\xnat_remote.json"
-        #set_args['config_path'] = r"D:\Data03\XNAT\config\xnat_local.json"
-        set_args['config_path'] = r"D:\Data03\XNAT\config\xnat_sandbox.json"
+        set_args['config_path'] = r"D:\Data03\XNAT\prod\config\xnat_remote.json"
+        #set_args['config_path'] = r"D:\Data03\XNAT\sandbox\config\xnat_sandbox.json"
         args.setArgs(set_args)
         
     # --------------------------------------
@@ -114,7 +86,7 @@ def main(argv):
         data = json.load(json_file)
 
         args.setArg("data_path", data['data_path'])
-        args.setArg("db_path", os.path.join(args.data_path, "xnat_db.db"))
+        args.setArg("db_path", os.path.join(args.data_path, "db.db"))
         args.setArg("db_connect_string", f'sqlite+pysqlite:///{args.db_path}')
         args.setArg("stage_path", os.path.join(args.data_path, "stage"))
         args.setArg("log_path", os.path.join(args.data_path, "logs"))
@@ -126,6 +98,7 @@ def main(argv):
         args.setArg("xnat_projects", data['xnat_projects'])
         args.setArg("xnat_subjects", data['xnat_subjects']) if 'xnat_subjects' in data else None
         args.setArg("xnat_experiments", data['xnat_experiments']) if 'xnat_experiments' in data else None
+        args.setArg("xnat_scans", data['xnat_scans']) if 'xnat_scans' in data else None
 
         args.setArg("preprocess_functions", data['preprocess_functions'])
         args.setArg("index", data['index'])
@@ -146,7 +119,7 @@ def main(argv):
 
     log.info(f'Executing {prog_name}')
 
-    initiate_preprocessing(args, log)
+    run_preprocessing(args, log)
 
     #------------------------------------------
     # calculate duration
