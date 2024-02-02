@@ -68,7 +68,8 @@ class xnat_tools(object):
             resource = scan.resources[json_name]
         else:
             try:
-                scan.create_resource(label=json_name, format='JSON')
+                #scan.create_resource(label=json_name, format='JSON')
+                scan.xnat_session.classes.ResourceCatalog(parent=scan, label=json_name)
             except:
                 log.info('Bypassing create_resource error')
             resource = scan.resources[json_name]
