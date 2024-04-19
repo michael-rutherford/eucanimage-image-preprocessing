@@ -190,6 +190,7 @@ class quality_tools(object):
                             and ('ProtocolName' not in ds[1] or not any(term in ds[1].ProtocolName.lower() for term in disallowed_terms))
                             and ('SequenceName' not in ds[1] or not any(term in ds[1].SequenceName.lower() for term in disallowed_terms))]
 
+                    if filtered_dicom_files:
                         # generate quality scores
                         if not edit_scan.scan_quality or args['reset'] == True:
                             log.info(f'Calculating Quality Score')
