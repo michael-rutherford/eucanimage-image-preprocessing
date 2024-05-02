@@ -63,17 +63,16 @@ class xnat_tools(object):
         
         with open(temp_file_path, 'w') as file:
             file.write(json_text)
-        
-        if json_name in scan.resources:
-            resource = scan.resources[json_name]
+
+        if 'QC' in scan.resources:
+            resource = scan.resources['QC']
         else:
             try:
-                #scan.create_resource(label=json_name, format='JSON')
-                scan.xnat_session.classes.ResourceCatalog(parent=scan, label=json_name)
+                scan.xnat_session.classes.ResourceCatalog(parent=scan, label='QC')
             except:
                 log.info('Bypassing create_resource error')
-            resource = scan.resources[json_name]
-
+            resource = scan.resources['QC']
+  
         resource.upload(temp_file_path, f'{json_name}.json')
         
         if os.path.exists(temp_dir_path):
