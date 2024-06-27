@@ -384,11 +384,14 @@ class quality_tools(object):
                     futures_list.append(executor.submit(self.get_piqe, dicom_file))
 
                 for future in futures.as_completed(futures_list):
-                    piqe_result_tuple = future.result()
-                    if piqe_result_tuple:
-                        dicom_file, score, artifact_mask, noise_mask, activity_mask = piqe_result_tuple
-                        results_dict['instances'][dicom_file[1].SOPInstanceUID] = {}
-                        results_dict['instances'][dicom_file[1].SOPInstanceUID]['piqe_score'] = score
+                    # dicom_file, score, artifact_mask, noise_mask, activity_mask = future.result()
+                    return_list = future.result()
+                    for item in return_list:
+                        dicom_index = str(dicom_file[1].SOPInstandeUID)
+                        if 'slice' in item.keys():
+                            dicom_index += f"-{str(item['slice'])}"
+                        results_dict['instances'][dicom_index] = {}
+                        results_dict['instances'][dicom_index]['piqe_score'] = item['score']
 
         # ----------------------------
         # Single-threaded
@@ -397,27 +400,27 @@ class quality_tools(object):
         else:
             # retrieve the pixel information from the DICOM files
             for dicom_file in selected_dicom_files:
-                piqe_result_tuple = self.get_piqe(dicom_file, log)
-                if piqe_result_tuple:
-                    dicom_file, score, artifact_mask, noise_mask, activity_mask = piqe_result_tuple
-                    results_dict['instances'][dicom_file[1].SOPInstanceUID] = {}
-                    results_dict['instances'][dicom_file[1].SOPInstanceUID]['piqe_score'] = score
+                # dicom_file, score, artifact_mask, noise_mask, activity_mask = self.get_piqe(dicom_file, log)
+                return_list = self.get_piqe(dicom_file, log)
+                for item in return_list:
+                    dicom_index = str(dicom_file[1].SOPInstandeUID)
+                    if 'slice' in item.keys():
+                        dicom_index += f"-{str(item['slice'])}"
+                    results_dict['instances'][dicom_index] = {}
+                    results_dict['instances'][dicom_index]['piqe_score'] = item['score']
                     #results_dict['instances'][dicom_file[1].SOPInstanceUID]['artifact_mask'] = artifact_mask
                     #results_dict['instances'][dicom_file[1].SOPInstanceUID]['noise_mask'] = noise_mask
                     #results_dict['instances'][dicom_file[1].SOPInstanceUID]['activity_mask'] = activity_mask
 
-        if piqe_result_tuple:
-            # Calculate and log the average score
-            scores = [instance['piqe_score'] for instance in results_dict['instances'].values()]
-            log.info(f"Scores: {scores}")
-            log.info(f"Length of scores: {len(scores)}")
-            average_score = sum(scores) / len(scores)
-            #print(f"Average PIQE Score: {average_score:.2f}")
-            results_dict['average_piqe_score'] = average_score
+        # Calculate and log the average score
+        scores = [instance['piqe_score'] for instance in results_dict['instances'].values()]
+        log.info(f"Scores: {scores}")
+        log.info(f"Length of scores: {len(scores)}")
+        average_score = sum(scores) / len(scores)
+        #print(f"Average PIQE Score: {average_score:.2f}")
+        results_dict['average_piqe_score'] = average_score
 
-            return json.dumps(results_dict)
-        else:
-            return None
+        return json.dumps(results_dict)
 
         # except Exception as e:     
         #     log.error(f'Quality Score Error - project: {edit_scan.project_name} | subject: {edit_scan.subject_label} | experiment: {edit_scan.experiment_label} | scan: {edit_scan.scan_id} | error: {str(e)}')
@@ -430,26 +433,46 @@ class quality_tools(object):
 
         # Get pixel data as numpy array
         check_array = full_dicom_file.pixel_array
+        record_slice_idx = False
+        if len(check_array.shape) == 3:
+            list_length = check_array[0]
+            sample_size = max(10, int(list_length * 0.1))
+            sample_size = min(sample_size, list_length)  # Ensure sample size does not exceed list length
+            selected_slice_indexes = random.sample(range(list_length), sample_size)
+            record_slice_idx = False
+        elif len(check_array.shape) > 3:
+            raise Exception
 
-        # Normalize pixel array if necessary
-        log.info(f"Check array shape: {check_array.shape}")
-        check_image = cv2.normalize(check_array, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
-        log.info(f"Check image shape: {check_image.shape}")
+        return_list = []
+        slice_dict = {}
+        for idx in selected_slice_indexes:
+            check_array_slice = check_array[idx, :, :]
+            # Normalize pixel array if necessary
+            log.info(f"Check array shape: {check_array_slice.shape}")
+            check_image = cv2.normalize(check_array_slice, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
+            log.info(f"Check image shape: {check_image_slice.shape}")
 
-        # Convert image from grayscale to RGB because PIQE needs a 3-channel image
-        check_image = cv2.cvtColor(check_image, cv2.COLOR_GRAY2RGB)
-        log.info(check_image.shape)
+            # Convert image from grayscale to RGB because PIQE needs a 3-channel image
+            check_image = cv2.cvtColor(check_image, cv2.COLOR_GRAY2RGB)
+            log.info(check_image.shape)
 
-        # Open the image using OpenCV
-        #cv2.imshow('DICOM image', pixel_array)
+            # Open the image using OpenCV
+            #cv2.imshow('DICOM image', pixel_array)
 
-        # Wait for a key press and then close the image window
-        #cv2.waitKey(0)
-        #cv2.destroyAllWindows()
+            # Wait for a key press and then close the image window
+            #cv2.waitKey(0)
+            #cv2.destroyAllWindows()
 
-        score, artifact_mask, noise_mask, activity_mask = piqe(check_image)
-        #print(f"Score: {Score:.2f}")
+            score, artifact_mask, noise_mask, activity_mask = piqe(check_image)
+            slice_dict['score'] = score
+            slice_dict['artifact_mask'] = artifact_mask
+            slice_dict['noise_mask'] = noise_mask
+            slice_dict['activity_mask'] = activity_mask
+            if record_slice_idx:
+                slice_dict['slice'] = idx
+            #print(f"Score: {Score:.2f}")
+            return_list.append(slice_dict)
 
-        return dicom_file, score, artifact_mask, noise_mask, activity_mask
+        return return_list
 
 
