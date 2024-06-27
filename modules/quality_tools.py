@@ -436,7 +436,7 @@ class quality_tools(object):
         record_slice_idx = False
         selected_slice_indexes = [0]
         if len(check_array.shape) == 3:
-            list_length = check_array[0]
+            list_length = check_array.shape[0]
             sample_size = max(10, int(list_length * 0.1))
             sample_size = min(sample_size, list_length)  # Ensure sample size does not exceed list length
             selected_slice_indexes = random.sample(range(list_length), sample_size)
