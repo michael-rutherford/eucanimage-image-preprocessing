@@ -189,18 +189,26 @@ class quality_tools(object):
                             and ('SeriesDescription' not in ds[1] or not any(term in ds[1].SeriesDescription.lower() for term in disallowed_terms))
                             and ('ProtocolName' not in ds[1] or not any(term in ds[1].ProtocolName.lower() for term in disallowed_terms))
                             and ('SequenceName' not in ds[1] or not any(term in ds[1].SequenceName.lower() for term in disallowed_terms))]
+                    log.info(f'Num dicom files: {len(filtered_dicom_files)}')
 
+                    if filtered_dicom_files:
                         # generate quality scores
                         if not edit_scan.scan_quality or args['reset'] == True:
                             log.info(f'Calculating Quality Score')
+                            log.info(f'Subject label: {edit_scan.subject_label}')
+                            log.info(f'Experiment label: {edit_scan.experiment_label}')
+                            log.info(f'Scan ID: {edit_scan.scan_id}')
                             edit_scan.scan_quality = self.get_quality_score(edit_scan, xnat_scan, filtered_dicom_files, log, args)
-                            xtools.set_scan_json_resource(args, log, xnat_scan, edit_scan.scan_quality, 'quality_score')
-                            dbtools.flush_database()
+                            log.info(f"Quality score: {edit_scan.scan_quality}")
+                            if edit_scan.scan_quality:
+                                xtools.set_scan_json_resource(args, log, xnat_scan, edit_scan.scan_quality, 'quality_score')
+                                dbtools.flush_database()
 
                         # get acquisition variables
                         if not edit_scan.scan_acquisition or args['reset'] == True:
                             log.info(f'Retrieving Acquisition Variables')
                             edit_scan.scan_acquisition = self.get_acquisition_tags(edit_scan, xnat_scan, filtered_dicom_files, log)
+                            log.info(f"Scan acquisition: {edit_scan.scan_acquisition}")
                             xtools.set_scan_json_resource(args, log, xnat_scan, edit_scan.scan_acquisition, 'acquisition_variables')
                             dbtools.flush_database()
 
@@ -376,9 +384,11 @@ class quality_tools(object):
                     futures_list.append(executor.submit(self.get_piqe, dicom_file))
 
                 for future in futures.as_completed(futures_list):
-                    dicom_file, score, artifact_mask, noise_mask, activity_mask = future.result()
-                    results_dict['instances'][dicom_file[1].SOPInstanceUID] = {}
-                    results_dict['instances'][dicom_file[1].SOPInstanceUID]['piqe_score'] = score
+                    piqe_result_tuple = future.result()
+                    if piqe_result_tuple:
+                        dicom_file, score, artifact_mask, noise_mask, activity_mask = piqe_result_tuple
+                        results_dict['instances'][dicom_file[1].SOPInstanceUID] = {}
+                        results_dict['instances'][dicom_file[1].SOPInstanceUID]['piqe_score'] = score
 
         # ----------------------------
         # Single-threaded
@@ -387,26 +397,33 @@ class quality_tools(object):
         else:
             # retrieve the pixel information from the DICOM files
             for dicom_file in selected_dicom_files:
-                dicom_file, score, artifact_mask, noise_mask, activity_mask = self.get_piqe(dicom_file)
-                results_dict['instances'][dicom_file[1].SOPInstanceUID] = {}
-                results_dict['instances'][dicom_file[1].SOPInstanceUID]['piqe_score'] = score
-                #results_dict['instances'][dicom_file[1].SOPInstanceUID]['artifact_mask'] = artifact_mask
-                #results_dict['instances'][dicom_file[1].SOPInstanceUID]['noise_mask'] = noise_mask
-                #results_dict['instances'][dicom_file[1].SOPInstanceUID]['activity_mask'] = activity_mask
+                piqe_result_tuple = self.get_piqe(dicom_file, log)
+                if piqe_result_tuple:
+                    dicom_file, score, artifact_mask, noise_mask, activity_mask = piqe_result_tuple
+                    results_dict['instances'][dicom_file[1].SOPInstanceUID] = {}
+                    results_dict['instances'][dicom_file[1].SOPInstanceUID]['piqe_score'] = score
+                    #results_dict['instances'][dicom_file[1].SOPInstanceUID]['artifact_mask'] = artifact_mask
+                    #results_dict['instances'][dicom_file[1].SOPInstanceUID]['noise_mask'] = noise_mask
+                    #results_dict['instances'][dicom_file[1].SOPInstanceUID]['activity_mask'] = activity_mask
 
-        # Calculate and log the average score
-        scores = [instance['piqe_score'] for instance in results_dict['instances'].values()]
-        average_score = sum(scores) / len(scores)
-        #print(f"Average PIQE Score: {average_score:.2f}")
-        results_dict['average_piqe_score'] = average_score
+        if piqe_result_tuple:
+            # Calculate and log the average score
+            scores = [instance['piqe_score'] for instance in results_dict['instances'].values()]
+            log.info(f"Scores: {scores}")
+            log.info(f"Length of scores: {len(scores)}")
+            average_score = sum(scores) / len(scores)
+            #print(f"Average PIQE Score: {average_score:.2f}")
+            results_dict['average_piqe_score'] = average_score
 
-        return json.dumps(results_dict)
+            return json.dumps(results_dict)
+        else:
+            return None
 
         # except Exception as e:     
         #     log.error(f'Quality Score Error - project: {edit_scan.project_name} | subject: {edit_scan.subject_label} | experiment: {edit_scan.experiment_label} | scan: {edit_scan.scan_id} | error: {str(e)}')
         #     return None
     
-    def get_piqe(self, dicom_file):
+    def get_piqe(self, dicom_file, log):
 
         # Get dicom header with pixels
         full_dicom_file = self.read_dicom(dicom_file[0], exclude_pixels=False)[1]
@@ -415,10 +432,13 @@ class quality_tools(object):
         check_array = full_dicom_file.pixel_array
 
         # Normalize pixel array if necessary
+        log.info(f"Check array shape: {check_array.shape}")
         check_image = cv2.normalize(check_array, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
+        log.info(f"Check image shape: {check_image.shape}")
 
         # Convert image from grayscale to RGB because PIQE needs a 3-channel image
         check_image = cv2.cvtColor(check_image, cv2.COLOR_GRAY2RGB)
+        log.info(check_image.shape)
 
         # Open the image using OpenCV
         #cv2.imshow('DICOM image', pixel_array)
