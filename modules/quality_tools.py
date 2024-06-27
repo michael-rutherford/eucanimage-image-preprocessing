@@ -200,9 +200,8 @@ class quality_tools(object):
                             log.info(f'Scan ID: {edit_scan.scan_id}')
                             edit_scan.scan_quality = self.get_quality_score(edit_scan, xnat_scan, filtered_dicom_files, log, args)
                             log.info(f"Quality score: {edit_scan.scan_quality}")
-                            if edit_scan.scan_quality:
-                                xtools.set_scan_json_resource(args, log, xnat_scan, edit_scan.scan_quality, 'quality_score')
-                                dbtools.flush_database()
+                            xtools.set_scan_json_resource(args, log, xnat_scan, edit_scan.scan_quality, 'quality_score')
+                            dbtools.flush_database()
 
                         # get acquisition variables
                         if not edit_scan.scan_acquisition or args['reset'] == True:
