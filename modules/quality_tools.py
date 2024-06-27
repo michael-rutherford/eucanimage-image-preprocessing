@@ -454,7 +454,7 @@ class quality_tools(object):
             # Normalize pixel array if necessary
             log.info(f"Check array shape: {check_array_slice.shape}")
             check_image = cv2.normalize(check_array_slice, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
-            log.info(f"Check image shape: {check_image_slice.shape}")
+            log.info(f"Check image shape: {check_image.shape}")
 
             # Convert image from grayscale to RGB because PIQE needs a 3-channel image
             check_image = cv2.cvtColor(check_image, cv2.COLOR_GRAY2RGB)
