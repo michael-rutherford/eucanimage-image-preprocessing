@@ -387,7 +387,7 @@ class quality_tools(object):
                     # dicom_file, score, artifact_mask, noise_mask, activity_mask = future.result()
                     return_list = future.result()
                     for item in return_list:
-                        dicom_index = str(dicom_file[1].SOPInstandeUID)
+                        dicom_index = str(dicom_file[1].SOPInstanceUID)
                         if 'slice' in item.keys():
                             dicom_index += f"-{str(item['slice'])}"
                         results_dict['instances'][dicom_index] = {}
@@ -403,7 +403,7 @@ class quality_tools(object):
                 # dicom_file, score, artifact_mask, noise_mask, activity_mask = self.get_piqe(dicom_file, log)
                 return_list = self.get_piqe(dicom_file, log)
                 for item in return_list:
-                    dicom_index = str(dicom_file[1].SOPInstandeUID)
+                    dicom_index = str(dicom_file[1].SOPInstanceUID)
                     if 'slice' in item.keys():
                         dicom_index += f"-{str(item['slice'])}"
                     results_dict['instances'][dicom_index] = {}
