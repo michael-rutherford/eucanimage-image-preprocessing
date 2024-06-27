@@ -434,6 +434,7 @@ class quality_tools(object):
         # Get pixel data as numpy array
         check_array = full_dicom_file.pixel_array
         record_slice_idx = False
+        selected_slice_indexes = [0]
         if len(check_array.shape) == 3:
             list_length = check_array[0]
             sample_size = max(10, int(list_length * 0.1))
@@ -446,7 +447,10 @@ class quality_tools(object):
         return_list = []
         slice_dict = {}
         for idx in selected_slice_indexes:
-            check_array_slice = check_array[idx, :, :]
+            if len(selected_slice_indexes) > 1 and len(check_array.shape) == 3:
+                check_array_slice = check_array[idx, :, :]
+            else:
+                check_array_slice = check_array
             # Normalize pixel array if necessary
             log.info(f"Check array shape: {check_array_slice.shape}")
             check_image = cv2.normalize(check_array_slice, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
