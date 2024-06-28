@@ -439,7 +439,7 @@ class quality_tools(object):
             sample_size = max(10, int(list_length * 0.1))
             sample_size = min(sample_size, list_length)  # Ensure sample size does not exceed list length
             selected_slice_indexes = random.sample(range(list_length), sample_size)
-            record_slice_idx = False
+            record_slice_idx = True
         elif len(check_array.shape) > 3:
             raise Exception
 
