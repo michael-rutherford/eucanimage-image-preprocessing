@@ -444,7 +444,6 @@ class quality_tools(object):
             raise Exception
 
         return_list = []
-        slice_dict = {}
         for idx in selected_slice_indexes:
             if len(selected_slice_indexes) > 1 and len(check_array.shape) == 3:
                 check_array_slice = check_array[idx, :, :]
@@ -467,10 +466,12 @@ class quality_tools(object):
             #cv2.destroyAllWindows()
 
             score, artifact_mask, noise_mask, activity_mask = piqe(check_image)
-            slice_dict['score'] = score
-            slice_dict['artifact_mask'] = artifact_mask
-            slice_dict['noise_mask'] = noise_mask
-            slice_dict['activity_mask'] = activity_mask
+            slice_dict = {
+                'score': score,
+                'artifact_mask': artifact_mask,
+                'noise_mask': noise_mask,
+                'activity_mask': activity_mask
+            }
             if record_slice_idx:
                 slice_dict['slice'] = idx
             #print(f"Score: {Score:.2f}")
