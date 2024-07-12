@@ -63,7 +63,7 @@ class xnat_tools(object):
         
         with open(temp_file_path, 'w') as file:
             file.write(json_text)
-
+ 
         if 'QC' in scan.resources:
             resource = scan.resources['QC']
         else:
