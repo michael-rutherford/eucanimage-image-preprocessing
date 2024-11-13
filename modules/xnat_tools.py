@@ -13,7 +13,8 @@ class xnat_tools(object):
 
     def __init__(self, xnat_server, xnat_user, xnat_password):
         
-        self.xnat_session = xnat.connect(server=xnat_server, user=xnat_user, password=xnat_password)
+        self.xnat_session = xnat.connect(server=xnat_server, user=xnat_user, password=xnat_password,
+                                         default_timeout=3600)
 
     # ----------------------------
     # xnat server functions
@@ -73,7 +74,7 @@ class xnat_tools(object):
                 log.info('Bypassing create_resource error')
             resource = scan.resources['QC']
   
-        resource.upload(temp_file_path, f'{json_name}.json')
+        resource.upload(temp_file_path, f'{json_name}.json', overwrite=True)
         
         if os.path.exists(temp_dir_path):
             shutil.rmtree(temp_dir_path)
