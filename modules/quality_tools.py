@@ -164,7 +164,12 @@ class quality_tools(object):
                         # ----------------------------
                         # sort datasets by InstanceNumber, ImagePositionPatient, SliceLocation, AcquisitionTime, SOPInstanceUID
                         # ----------------------------
-                        dicom_files.sort(key=get_sort_key)
+                        try:
+                            dicom_files.sort(key=get_sort_key)
+                        except AttributeError as error:
+                            log.warning("No sort key found when sorting DICOM files; most likely no SOPInstanceUID. Skipping this scan.")
+                            log.warning(error)
+                            dicom_files = []
                         #log.debug(f'DICOM files sorted ({len(dicom_files)})')
 
                         # ----------------------------
@@ -227,7 +232,11 @@ class quality_tools(object):
         dataset = None
         with scan_file.open() as dicom_file:
 
-            dataset = dicom.dcmread(dicom_file, stop_before_pixels=exclude_pixels)
+            try:
+                dataset = dicom.dcmread(dicom_file, stop_before_pixels=exclude_pixels)
+            except dicom.errors.InvalidDicomError:
+                print("WARNING: InvalidDicomError: Forcing pydicom.dcmread")
+                dataset = dicom.dcmread(dicom_file, stop_before_pixels=exclude_pixels, force=True)
 
         return [scan_file, dataset]
 
