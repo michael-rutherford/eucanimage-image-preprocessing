@@ -118,10 +118,17 @@ class quality_tools(object):
                 if args['reset'] == True or not edit_scan.scan_quality or not edit_scan.scan_acquisition:
 
                     # get xnat scan element
-                    xnat_scan = xtools.get_xnat_element(edit_scan.project_id, edit_scan.subject_id, edit_scan.experiment_id, edit_scan.scan_id)
+                    try:
+                        xnat_scan = xtools.get_xnat_element(edit_scan.project_id, edit_scan.subject_id, edit_scan.experiment_id, edit_scan.scan_id)
+                        # get dicom files
+                        scan_files = xnat_scan.resources['DICOM'].files if 'DICOM' in xnat_scan.resources else None                    
+                    except KeyError as exc:
+                        log.warning("Cannot find subject from the database on XNAT; skipping subject.")
+                        log.info(exc)
+                        scan_files = None
+                        
+                        
 
-                    # get dicom files
-                    scan_files = xnat_scan.resources['DICOM'].files if 'DICOM' in xnat_scan.resources else None                    
                     dicom_files = []
                     filtered_dicom_files = []
                     
@@ -164,7 +171,12 @@ class quality_tools(object):
                         # ----------------------------
                         # sort datasets by InstanceNumber, ImagePositionPatient, SliceLocation, AcquisitionTime, SOPInstanceUID
                         # ----------------------------
-                        dicom_files.sort(key=get_sort_key)
+                        try:
+                            dicom_files.sort(key=get_sort_key)
+                        except AttributeError as error:
+                            log.warning("No sort key found when sorting DICOM files; most likely no SOPInstanceUID. Skipping this scan.")
+                            log.warning(error)
+                            dicom_files = []
                         #log.debug(f'DICOM files sorted ({len(dicom_files)})')
 
                         # ----------------------------
@@ -227,7 +239,11 @@ class quality_tools(object):
         dataset = None
         with scan_file.open() as dicom_file:
 
-            dataset = dicom.dcmread(dicom_file, stop_before_pixels=exclude_pixels)
+            try:
+                dataset = dicom.dcmread(dicom_file, stop_before_pixels=exclude_pixels)
+            except dicom.errors.InvalidDicomError:
+                print("WARNING: InvalidDicomError: Forcing pydicom.dcmread")
+                dataset = dicom.dcmread(dicom_file, stop_before_pixels=exclude_pixels, force=True)
 
         return [scan_file, dataset]
 
